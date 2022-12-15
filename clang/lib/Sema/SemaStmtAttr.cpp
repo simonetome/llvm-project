@@ -23,6 +23,35 @@
 using namespace clang;
 using namespace sema;
 
+/* Handling of Wcet loop attribute*/
+static Attr *handleWcetLoopAttr(Sema &S, Stmt *St, const ParsedAttr &A,
+SourceRange Range) {
+
+  unsigned TimeArgument = 0;
+
+  // return first argument as clang::Expr of the clang::ParsedAttr
+  Expr *TimeArgumentExpr = A.getArgAsExpr(0);
+
+  // llvm::Optional of type llvm::APSInt (An arbitrary precision integer
+  // that knows its signedness), optionally contains the value
+  Optional<llvm::APSInt> ArgVal;
+  ArgVal = TimeArgumentExpr->getIntegerConstantExpr(S.Context);
+  int Val = ArgVal->getSExtValue();
+
+  // if the argument is < 0 return a compile time error
+  if (Val <= 0) {
+    S.Diag(A.getRange().getBegin(),
+    diag::err_attribute_requires_positive_integer)
+    << A << 0;
+    return nullptr;
+  }
+
+  // cast the argument to unsigned and then we build the WcetLoopAttr
+  TimeArgument = static_cast<unsigned>(Val);
+  return ::new (S.Context) WcetLoopAttr(S.Context, A,TimeArgument);
+}
+
+
 static Attr *handleFallThroughAttr(Sema &S, Stmt *St, const ParsedAttr &A,
                                    SourceRange Range) {
   FallThroughAttr Attr(S.Context, A);
@@ -469,6 +498,8 @@ static Attr *ProcessStmtAttribute(Sema &S, Stmt *St, const ParsedAttr &A,
     return nullptr;
 
   switch (A.getKind()) {
+  case ParsedAttr::AT_WcetLoop:
+    return handleWcetLoopAttr(S, St, A, Range);
   case ParsedAttr::AT_AlwaysInline:
     return handleAlwaysInlineAttr(S, St, A, Range);
   case ParsedAttr::AT_FallThrough:

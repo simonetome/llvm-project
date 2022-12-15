@@ -428,6 +428,15 @@ MDNode *LoopInfo::createMetadata(
   }
 
   LLVMContext &Ctx = Header->getContext();
+
+  if(Attrs.Wcet){
+    Metadata *Vals[] = {
+    MDString::get(Ctx, "wcet.loop"),
+    ConstantAsMetadata::get(ConstantInt::get(llvm::Type::getInt32Ty(Ctx),
+    Attrs.WcetTime))};
+    LoopProperties.push_back(MDNode::get(Ctx, Vals));
+  }
+
   if (Attrs.MustProgress)
     LoopProperties.push_back(
         MDNode::get(Ctx, MDString::get(Ctx, "llvm.loop.mustprogress")));
@@ -469,6 +478,8 @@ void LoopAttributes::clear() {
   PipelineDisabled = false;
   PipelineInitiationInterval = 0;
   MustProgress = false;
+  Wcet = false;
+  WcetTime = 0;
 }
 
 LoopInfo::LoopInfo(BasicBlock *Header, const LoopAttributes &Attrs,
@@ -796,7 +807,16 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
         (StagedAttrs.UnrollEnable == LoopAttributes::Unspecified &&
          StagedAttrs.UnrollCount == 0))
       setUnrollState(LoopAttributes::Disable);
-
+    
+  /// check if the loop has the wcet loop attribute, set it in case
+  for(const auto * Attr : Attrs){
+    if(Attr->getKind() == attr::WcetLoop){
+      setWcet(true);
+      const auto *wcetLoopAttr = dyn_cast<WcetLoopAttr>(Attr);
+      setWcetTime(static_cast<unsigned>(
+      wcetLoopAttr->getTimeArgument()));
+    }
+  }
   /// Stage the attributes.
   push(Header, StartLoc, EndLoc);
 }

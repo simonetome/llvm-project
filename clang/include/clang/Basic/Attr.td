@@ -664,6 +664,16 @@ class IgnoredAttr : Attr {
 // Attributes begin here
 //
 
+/* WCET attribute definition */
+def WcetLoop : StmtAttr {
+  let Spellings = [Clang<"wcet_loop">];
+  let Documentation = [Undocumented];
+  let Subjects = SubjectList<[ForStmt, CXXForRangeStmt, WhileStmt, DoStmt], ErrorDiag,
+                             "loop statements only">;
+  let Args = [UnsignedArgument<"TimeArgument">];
+}
+
+
 def AbiTag : Attr {
   let Spellings = [GCC<"abi_tag", /*AllowInC*/0>];
   let Args = [VariadicStringArgument<"Tags">];

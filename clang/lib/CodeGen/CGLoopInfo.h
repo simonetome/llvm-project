@@ -81,6 +81,12 @@ struct LoopAttributes {
 
   /// Value for whether the loop is required to make progress.
   bool MustProgress;
+
+  /// Value which is true if the loop has the wcet loop attribute
+  bool Wcet;
+  /// Value of the wcet loop attribute (worst execution time)
+  unsigned WcetTime;
+
 };
 
 /// Information used when generating a structured loop.
@@ -284,6 +290,12 @@ public:
 
   /// Set no progress for the next loop pushed.
   void setMustProgress(bool P) { StagedAttrs.MustProgress = P; }
+
+  /// Set wcet loop attribute for the next loop pushed.
+  void setWcet(bool Enable = true){StagedAttrs.Wcet = Enable; }
+  /// Set the wcet time for the next loop pushed.
+  void setWcetTime(unsigned time){StagedAttrs.WcetTime = time; }
+
 
 private:
   /// Returns true if there is LoopInfo on the stack.
